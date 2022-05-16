@@ -1,0 +1,44 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/getOpenId/index",
+    "pages/getMiniProgramCode/index",
+    "pages/deployService/index",
+    "pages/createCollection/index",
+    "pages/uploadFile/index",
+    "pages/selectRecord/index",
+    "pages/updateRecord/index",
+    "pages/updateRecordResult/index",
+    "pages/updateRecordSuccess/index",
+    "pages/sumRecord/index",
+    "pages/sumRecordResult/index",
+    "pages/im/im"
+  ],
+  "window": {
+    "backgroundColor": "#F6F6F6",
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#262626",
+    "navigationBarTitleText": "游乐园",
+    "navigationBarTextStyle": "white"
+  },
+  "tabBar": {
+    "backgroundColor": "#FECA49",
+    "color": "#D78B09",
+    "selectedColor": "#FFF",
+    "borderStyle": "black",
+    "position": "top",
+    "list": [{
+      "pagePath": "pages/index/index",
+      "text": "首页",
+      "selectedIconPath": "images/th.png",
+      "iconPath": "images/2.png"
+    },{
+      "pagePath": "pages/im/im",
+      "text": "im",
+      "selectedIconPath": "images/0x300a0a0.png",
+      "iconPath": "images/6725.jpg_wh300.png"
+    }]
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2"
+}

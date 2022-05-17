@@ -1,4 +1,9 @@
-
-<view class="demo">
-  例子
+<view>文字翻译</view>
+<button bindtap="handleChoose">获取本地图片</button>
+<view class="box">
+<view class="position" style="width:{{wordsInfo.location.width*ratio}}px;height:{{wordsInfo.location.height*ratio}}px;left:{{wordsInfo.location.left*ratio}}px;top: {{wordsInfo.location.top*ratio}}px;" wx:if="{{wordsInfo}}"></view>
+<image src="{{imageSrc}}" mode="widthFix"></image>
+</view>
+<view wx:if="{{wordsInfo}}">
+  <view>识别的文字为：{{wordsInfo.words}}</view>
 </view>

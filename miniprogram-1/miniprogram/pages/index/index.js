@@ -1,142 +1,90 @@
-// index.js
-// const app = getApp()
-const { envList } = require('../../envList.js');
-
+let base64Str=""
+//实际的位置的height=小程序中图宽度/原图宽度*返回的位置height
 Page({
-  data: {
-    showUploadTip: false,
-    powerList: [{
-      title: '云函数',
-      tip: '安全、免鉴权运行业务代码',
-      showItem: false,
-      item: [{
-        title: '获取OpenId',
-        page: 'getOpenId'
-      },
-      //  {
-      //   title: '微信支付'
-      // },
-       {
-        title: '生成小程序码',
-        page: 'getMiniProgramCode'
-      },
-      // {
-      //   title: '发送订阅消息',
-      // }
-    ]
-    }, {
-      title: '数据库',
-      tip: '安全稳定的文档型数据库',
-      showItem: false,
-      item: [{
-        title: '创建集合',
-        page: 'createCollection'
-      }, {
-        title: '更新记录',
-        page: 'updateRecord'
-      }, {
-        title: '查询记录',
-        page: 'selectRecord'
-      }, {
-        title: '聚合操作',
-        page: 'sumRecord'
-      }]
-    }, {
-      title: '云存储',
-      tip: '自带CDN加速文件存储',
-      showItem: false,
-      item: [{
-        title: '上传文件',
-        page: 'uploadFile'
-      }]
-    }, {
-      title: '云托管',
-      tip: '不限语言的全托管容器服务',
-      showItem: false,
-      item: [{
-        title: '部署服务',
-        page: 'deployService'
-      }]
-    }],
-    envList,
-    selectedEnv: envList[0],
-    haveCreateCollection: false
+  data:{
+    imageSrc:"",
+    wordsInfo:"",
+    ratio:1
   },
-
-  onClickPowerInfo(e) {
-    const index = e.currentTarget.dataset.index;
-    const powerList = this.data.powerList;
-    powerList[index].showItem = !powerList[index].showItem;
-    if (powerList[index].title === '数据库' && !this.data.haveCreateCollection) {
-      this.onClickDatabase(powerList);
-    } else {
-      this.setData({
-        powerList
-      });
-    }
-  },
-
-  onChangeShowEnvChoose() {
-    wx.showActionSheet({
-      itemList: this.data.envList.map(i => i.alias),
-      success: (res) => {
-        this.onChangeSelectedEnv(res.tapIndex);
-      },
-      fail (res) {
-        console.log(res.errMsg);
-      }
-    });
-  },
-
-  onChangeSelectedEnv(index) {
-    if (this.data.selectedEnv.envId === this.data.envList[index].envId) {
-      return;
-    }
-    const powerList = this.data.powerList;
-    powerList.forEach(i => {
-      i.showItem = false;
-    });
-    this.setData({
-      selectedEnv: this.data.envList[index],
-      powerList,
-      haveCreateCollection: false
-    });
-  },
-
-  jumpPage(e) {
-    wx.navigateTo({
-      url: `/pages/${e.currentTarget.dataset.page}/index?envId=${this.data.selectedEnv.envId}`,
-    });
-  },
-
-  onClickDatabase(powerList) {
-    wx.showLoading({
-      title: '',
-    });
-    wx.cloud.callFunction({
-      name: 'quickstartFunctions',
-      config: {
-        env: this.data.selectedEnv.envId
-      },
-      data: {
-        type: 'createCollection'
-      }
-    }).then((resp) => {
-      if (resp.result.success) {
+  handleChoose:function(e){
+    console.log("开始选择图片");
+    //1.获取识别的数据；
+    //2.获取到的图片数据，转化成BASE64格式的数据
+    //3.获取一个百度智能云token和API，
+    //4.通过token和API获取到人脸识别的数据
+    //5.将数据进行一轮处理，达到界面的效果
+    wx.chooseImage({
+      count: 1,
+      sizeType:["compressed","original"],
+      sourceType:["album","camera"],
+      success:(res)=>{
         this.setData({
-          haveCreateCollection: true
-        });
+          imageSrc:res.tempFilePaths[0]
+        })
+        this.encode(res.tempFilePaths[0]);
+        wx.getImageInfo({
+          src: res.tempFilePaths[0],
+          success:(res)=>{
+            this.setData({
+              ratio:300/res.width
+            })
+          }
+        })
       }
-      this.setData({
-        powerList
-      });
-      wx.hideLoading();
-    }).catch((e) => {
-      console.log(e);
-      this.setData({
-        showUploadTip: true
-      });
-      wx.hideLoading();
-    });
+    })
+  },
+  encode(filePath){
+    let fs=wx.getFileSystemManager();
+    fs.readFile({
+      filePath:filePath,
+      encoding:"base64",
+      success:(res)=>{
+        base64Str=res.data;
+        this.getAccessToken();
+      },
+    })
+  },
+  getAccessToken(){
+    wx.request({
+      method:"POST",
+      url: 'https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=1Yr98vOexrUfEB2p1MjGQPDc&client_secret=0fUV8wNEzSKs0Fu1KgSsjEK5hwMAAazC',
+      success:(res)=>{
+        this.getPictureInfo(res.data.access_token)
+      },
+    })
+  },
+  getPictureInfo(token){
+    wx.request({
+      method:"POST",
+      url: 'https://aip.baidubce.com/rest/2.0/ocr/v1/general?access_token='+token,
+      data:{
+        image:base64Str,
+        language_type:"CHN_ENG",
+
+        detect_direction:"true",
+        vertexes_location:"true",
+        probability:"true"
+      },
+      header:{
+        "Content-Type":"application/x-www-form-urlencoded"
+      },
+      success:(res)=>{
+        console.log(res)
+        if(res.data.errMsg==="request:ok"){
+          this.setData({
+          wordsInfo:res.data.words_result[0]
+          })
+        }else{this.setData({
+          wordsInfo:res.data.words_result[0]
+        })
+          wx.showToast({
+            title: '文字识别失败！',
+          })
+        }
+        
+
+      }
+    })
   }
-});
+}
+)
